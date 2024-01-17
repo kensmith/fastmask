@@ -27,10 +27,11 @@ if (process.argv.length < 3) {
 // Use console.log(JSON.stringify(state, null, 2)); to debug process state.
 let state = {
   app: 'fastmask',
+  prefixLength: 5,
   filename: `${process.env.HOME}/.config/fastmask/config.json`,
   raw: '',
   config: {},
-  expectedKeys: ['token'], // these keys need to appare in config.json
+  expectedConfigItems: ['token'], // these config items are required
   domain: process.argv[2],
   coreCapability: 'urn:ietf:params:jmap:core',
   maskedEmailCapability: 'https://www.fastmail.com/dev/maskedemail',
@@ -50,7 +51,7 @@ try {
 state.config = JSON.parse(state.raw);
 
 // validate config
-state.expectedKeys.forEach((key) => {
+state.expectedConfigItems.forEach((key) => {
   if (!state.config[key] || state.config[key].length <= 0) {
     dieAndShowResult(`${key} is missing in ${state.filename}`);
   }
@@ -60,9 +61,8 @@ state.expectedKeys.forEach((key) => {
 if (!state.config.prefix || state.config.prefix.length <= 0) {
   // vowels removed to avoid regrettable random generations
   const charset = 'bcdfghjkmnpqrstvwxz';
-  const prefLen = 5;
   state.config.prefix = "";
-  for (var i = 0; i < prefLen; ++i) {
+  for (var i = 0; i < state.prefixLength; ++i) {
     state.config.prefix += charset.charAt(Math.floor(Math.random() * charset.length));
   }
 }
@@ -96,7 +96,7 @@ const getSession = async () => {
   state.session.accountId = state.session.json.primaryAccounts[state.coreCapability];
   state.session.hasMaskedEmailCapability = state.maskedEmailCapability in state.session.json.accounts[state.session.accountId].accountCapabilities;
   if (!state.session.hasMaskedEmailCapability) {
-    dieAndShowResult(`The configured API key in ${state.filename} has not been granted masked email capabilities.`);
+    dieAndShowResult(`The configured API token in ${state.filename} has not been granted masked email capabilities.`);
   }
 };
 
