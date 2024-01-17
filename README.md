@@ -11,6 +11,7 @@ Generate your API token from your Fastmail account:
   * You only need to grant the "Masked Email" scope.
   * Don't set it to "Read-only access." Leave that
     unchecked.
+  * https://app.fastmail.com/settings/security/tokens
 
 Then, on Linux, (other OSes left as an exercise)
 
