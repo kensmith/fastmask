@@ -4,10 +4,23 @@
 // https://github.com/kensmith/fastmask
 // License: MIT
 
+let result = {
+  prefix: '',
+  domain: '',
+  email: '',
+}
+
+function dieAndShowResult(msg) {
+  if (msg && msg.length > 0) {
+    console.error(msg);
+  }
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  process.exit(1);
+}
+
 // usage
 if (process.argv.length < 3) {
-  console.error(`usage: ${process.argv[1]} <domain>`);
-  process.exit(1);
+  dieAndShowResult(`usage: ${process.argv[1]} <domain>`);
 }
 
 // global program state
@@ -25,21 +38,21 @@ let state = {
   hostname: "api.fastmail.com",
 };
 
+result.domain = state.domain;
+
 // load config
 const fs = require('node:fs')
 try {
   state.raw = fs.readFileSync(state.filename);
 } catch (error) {
-  console.error(`Couldn't open the config file, "${state.filename}"`);
-  process.exit(1);
+  dieAndShowResult(`Couldn't open the config file, "${state.filename}"`);
 }
 state.config = JSON.parse(state.raw);
 
 // validate config
 state.expectedKeys.forEach((key) => {
   if (!state.config[key] || state.config[key].length <= 0) {
-    console.error(`${key} is missing in ${state.filename}`);
-    process.exit(1);
+    dieAndShowResult(`${key} is missing in ${state.filename}`);
   }
 });
 
@@ -53,6 +66,7 @@ if (!state.config.prefix || state.config.prefix.length <= 0) {
     state.config.prefix += charset.charAt(Math.floor(Math.random() * charset.length));
   }
 }
+result.prefix = state.config.prefix;
 
 // apply validated config
 state.authUrl = `https://${state.hostname}/.well-known/jmap`;
@@ -64,8 +78,7 @@ state.headers = {
 const validateResponse = async (response) => {
   if (response.status != 200) {
     const text = await response.text();
-    console.error(`${response.status}: ${response.statusText}: ${text}`);
-    process.exit(1);
+    dieAndShowResult(`${response.status}: ${response.statusText}: ${text}`);
   }
 }
 
@@ -83,8 +96,7 @@ const getSession = async () => {
   state.session.accountId = state.session.json.primaryAccounts[state.coreCapability];
   state.session.hasMaskedEmailCapability = state.maskedEmailCapability in state.session.json.accounts[state.session.accountId].accountCapabilities;
   if (!state.session.hasMaskedEmailCapability) {
-    console.error('The configured API key has not been granted masked email capabilities.');
-    process.exit(1);
+    dieAndShowResult('The configured API key has not been granted masked email capabilities.');
   }
 };
 
@@ -123,14 +135,12 @@ const createMaskedEmail = async () => {
   state.masked.methodResponse = state.masked.json['methodResponses'][0][1];
   if (state.app in state.masked.methodResponse.created) {
     state.masked.email = state.masked.methodResponse.created[state.app].email;
-    console.log(`New masked email for ${state.domain}: ${state.masked.email}`);
+    result.email = state.masked.email;
   } else {
     if (state.app in state.masked.methodResponse.notCreated) {
-      console.error(state.masked.methodResponse.notCreated[state.app].description);
-    } else {
-      console.error("Couldn't create masked email");
+      dieAndShowResult(state.masked.methodResponse.notCreated[state.app].description);
     }
-    process.exit(1);
+    dieAndShowResult("Couldn't create masked email");
   }
 };
 

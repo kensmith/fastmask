@@ -24,6 +24,10 @@ $ cat << EOF > $HOME/.config/fastmask/config.json
 EOF
 $ chmod 600 $HOME/.config/fastmask/config.json
 
+Expected usage:
+
+$ fastmask example.com | jq '.email'
+
 This project was inspired by
 https://github.com/dvcrn/maskedemail-cli and
 https://github.com/fastmail/JMAP-Samples. It is strictly
