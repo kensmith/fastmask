@@ -46,7 +46,7 @@ if (state.config.app && state.config.app.length > 0) {
 
 // generate a prefix if none provided
 if (!state.config.prefix || state.config.prefix.length <= 0) {
-  // vowels removed to avoid regretable random generations
+  // vowels removed to avoid regrettable random generations
   const charset = 'bcdfghjkmnpqrstvwxz';
   const prefLen = 5;
   state.config.prefix = "";

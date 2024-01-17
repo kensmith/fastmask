@@ -30,4 +30,6 @@ https://github.com/fastmail/JMAP-Samples. It is strictly
 targeted at creating new masked emails. None of the other
 APIs are covered in order to be as simple as possible.
 
+License: MIT
+
 vim:tw=60:
