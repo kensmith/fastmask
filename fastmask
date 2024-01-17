@@ -10,11 +10,15 @@ let result = {
   email: '',
 }
 
+function showResult() {
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
 function dieAndShowResult(msg) {
   if (msg && msg.length > 0) {
     console.error(msg);
   }
-  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  showResult();
   process.exit(1);
 }
 
@@ -147,6 +151,7 @@ const createMaskedEmail = async () => {
 const go = async () => {
   await getSession();
   await createMaskedEmail();
+  showResult();
 }
 
 go();
