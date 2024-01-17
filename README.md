@@ -1,7 +1,7 @@
 # fastmask
 
-Minimal, low dependency program to create Fastmail masked
-emails using their JMAP API.
+Minimal, low dependency Javascript program to create
+Fastmail masked emails using the JMAP API.
 
 Usage:
 
