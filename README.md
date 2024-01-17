@@ -32,9 +32,35 @@ opposed to a randomly generated one.
 
 ## Usage:
 
+General:
+
 ```
-$ fastmask example.com | jq '.email'
+$ fastmask <domain>
 ```
+
+Example:
+
+```
+$ fastmask example.com
+```
+
+This emits JSON with the following form:
+
+```
+{
+  "prefix": "mshqh",
+  "domain": "example.com",
+  "email": "mshqh.xxxxx@fastmail.com"
+}
+```
+
+Which you can deal with programmatically with something like this:
+
+```
+$ fastmasil example.com | jq '.email'
+```
+
+## Related
 
 This project was inspired by
 https://github.com/dvcrn/maskedemail-cli and
