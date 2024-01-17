@@ -3,7 +3,7 @@
 Minimal, low dependency Javascript program to create
 Fastmail masked emails using the JMAP API.
 
-Usage:
+## Setup:
 
 Generate your API token from your Fastmail account:
 * Settings -> Privacy & Security -> Integrations -> API
@@ -30,7 +30,7 @@ You can optionally set `"prefix"` in `config.json` to cause
 your generated masked emails to have a constant prefix as
 opposed to a randomly generated one.
 
-Expected usage:
+## Usage:
 
 ```
 $ fastmask example.com | jq '.email'
@@ -42,6 +42,13 @@ https://github.com/fastmail/JMAP-Samples. It is strictly
 targeted at creating new masked emails. None of the other
 APIs are covered in order to be as simple as possible.
 
-License: MIT
+## Installation
+
+Just `chmod 755` the program and copy it to your
+`$HOME/.local/bin` or where ever you keep your personal
+binaries. You'll also need [Node.js](https://nodejs.org) for
+your platform.
+
+`License: MIT`
 
 vim:tw=60:
