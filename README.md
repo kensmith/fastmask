@@ -23,4 +23,10 @@ $ cat << EOF > $HOME/.config/fastmask/config.json
 EOF
 $ chmod 600 $HOME/.config/fastmask/config.json
 
+This project was inspired by
+https://github.com/dvcrn/maskedemail-cli and
+https://github.com/fastmail/JMAP-Samples. It is strictly
+targeted at creating new masked emails. None of the other
+APIs are covered in order to be as simple as possible.
+
 vim:tw=60:
