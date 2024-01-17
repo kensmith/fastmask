@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+// Copyright, Ken Smith, 2024
+// License: MIT
+
 // usage
 if (process.argv.length < 3) {
   console.error(`usage: ${process.argv[1]} <domain>`);
@@ -38,11 +41,6 @@ state.expectedKeys.forEach((key) => {
     process.exit(1);
   }
 });
-
-// use app from config if provided
-if (state.config.app && state.config.app.length > 0) {
-  state.app = state.config.app.replace(/\s+/g, '');
-}
 
 // generate a prefix if none provided
 if (!state.config.prefix || state.config.prefix.length <= 0) {
