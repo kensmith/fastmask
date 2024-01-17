@@ -32,7 +32,9 @@ opposed to a randomly generated one.
 
 Expected usage:
 
+```
 $ fastmask example.com | jq '.email'
+```
 
 This project was inspired by
 https://github.com/dvcrn/maskedemail-cli and
