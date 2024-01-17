@@ -15,14 +15,20 @@ Generate your API token from your Fastmail account:
 
 Then, on Linux, (other OSes left as an exercise)
 
+```
 $ mkdir -p $HOME/.config/fastmask
 $ chmod 700 $HOME/.config/fastmask
 $ cat << EOF > $HOME/.config/fastmask/config.json
 {
-  token: "<your fastmail API token>",
+  "token": "<your fastmail API token>",
 }
 EOF
 $ chmod 600 $HOME/.config/fastmask/config.json
+```
+
+You can optionally set `"prefix"` in `config.json` to cause
+your generated masked emails to have a constant prefix as
+opposed to a randomly generated one.
 
 Expected usage:
 
