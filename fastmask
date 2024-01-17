@@ -1,0 +1,145 @@
+#!/usr/bin/env node
+
+// usage
+if (process.argv.length < 3) {
+  console.error(`usage: ${process.argv[1]} <domain>`);
+  process.exit(1);
+}
+
+// global program state
+// Use console.log(JSON.stringify(state, null, 2)); to debug process state.
+let state = {
+  app: 'fastmask',
+  filename: `${process.env.HOME}/.config/fastmask/config.json`,
+  raw: '',
+  config: {},
+  expectedKeys: ['token'], // these keys need to appare in config.json
+  domain: process.argv[2],
+  coreCapability: 'urn:ietf:params:jmap:core',
+  maskedEmailCapability: 'https://www.fastmail.com/dev/maskedemail',
+  maskedEmailMethod: 'MaskedEmail/set',
+  hostname: "api.fastmail.com",
+};
+
+// load config
+const fs = require('node:fs')
+try {
+  state.raw = fs.readFileSync(state.filename);
+} catch (error) {
+  console.error(`Couldn't open the config file, "${state.filename}"`);
+  process.exit(1);
+}
+state.config = JSON.parse(state.raw);
+
+// validate config
+state.expectedKeys.forEach((key) => {
+  if (!state.config[key] || state.config[key].length <= 0) {
+    console.error(`${key} is missing in ${state.filename}`);
+    process.exit(1);
+  }
+});
+
+// use app from config if provided
+if (state.config.app && state.config.app.length > 0) {
+  state.app = state.config.app.replace(/\s+/g, '');
+}
+
+// generate a prefix if none provided
+if (!state.config.prefix || state.config.prefix.length <= 0) {
+  // vowels removed to avoid regretable random generations
+  const charset = 'bcdfghjkmnpqrstvwxz';
+  const prefLen = 5;
+  state.config.prefix = "";
+  for (var i = 0; i < prefLen; ++i) {
+    state.config.prefix += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+}
+
+// apply validated config
+state.authUrl = `https://${state.hostname}/.well-known/jmap`;
+state.headers = {
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${state.config.token}`,
+};
+
+const validateResponse = async (response) => {
+  if (response.status != 200) {
+    const text = await response.text();
+    console.error(`${response.status}: ${response.statusText}: ${text}`);
+    process.exit(1);
+  }
+}
+
+// populate the session object
+const getSession = async () => {
+  state.session = {}
+  state.session.request = {
+    method: "GET",
+    headers: state.headers
+  }
+  state.session.response = await fetch(state.authUrl, state.session.request);
+  await validateResponse(state.session.response);
+  state.session.json = await state.session.response.json()
+  state.session.apiUrl = state.session.json.apiUrl;
+  state.session.accountId = state.session.json.primaryAccounts[state.coreCapability];
+  state.session.hasMaskedEmailCapability = state.maskedEmailCapability in state.session.json.accounts[state.session.accountId].accountCapabilities;
+  if (!state.session.hasMaskedEmailCapability) {
+    console.error('The configured API key has not been granted masked email capabilities.');
+    process.exit(1);
+  }
+};
+
+// create the masked email request and handle the response
+const createMaskedEmail = async () => {
+  state.masked = {}
+  state.masked.request = {
+    method: "POST",
+    headers: state.headers,
+    body: JSON.stringify({
+      using: [
+        state.coreCapability,
+        state.maskedEmailCapability,
+      ],
+      methodCalls: [
+        [
+          state.maskedEmailMethod,
+          {
+            accountId: state.session.accountId,
+            create: {
+              [state.app]: {
+                forDomain: state.domain,
+                state: "enabled",
+                emailPrefix: state.config.prefix,
+              }
+            }
+          },
+          "0"
+        ]
+      ]
+    })
+  };
+  state.masked.response = await fetch(state.session.apiUrl, state.masked.request);
+  await validateResponse(state.masked.response);
+  state.masked.json = await state.masked.response.json();
+  state.masked.methodResponse = state.masked.json['methodResponses'][0][1];
+  if (state.app in state.masked.methodResponse.created) {
+    state.masked.email = state.masked.methodResponse.created[state.app].email;
+    console.log(`New masked email for ${state.domain}: ${state.masked.email}`);
+  } else {
+    if (state.app in state.masked.methodResponse.notCreated) {
+      console.error(state.masked.methodResponse.notCreated[state.app].description);
+    } else {
+      console.error("Couldn't create masked email");
+    }
+    process.exit(1);
+  }
+};
+
+const go = async () => {
+  await getSession();
+  await createMaskedEmail();
+}
+
+go();
+
+// vim:ft=javascript:
