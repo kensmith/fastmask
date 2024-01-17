@@ -96,7 +96,7 @@ const getSession = async () => {
   state.session.accountId = state.session.json.primaryAccounts[state.coreCapability];
   state.session.hasMaskedEmailCapability = state.maskedEmailCapability in state.session.json.accounts[state.session.accountId].accountCapabilities;
   if (!state.session.hasMaskedEmailCapability) {
-    dieAndShowResult('The configured API key has not been granted masked email capabilities.');
+    dieAndShowResult(`The configured API key in ${state.filename} has not been granted masked email capabilities.`);
   }
 };
 
