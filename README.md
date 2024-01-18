@@ -57,7 +57,7 @@ This emits JSON with the following form:
 Which you can deal with programmatically with something like this:
 
 ```
-$ fastmask example.com | jq '.email'
+$ fastmask example.com | jq '.email' | tr -d '"'
 ```
 
 ## Related
