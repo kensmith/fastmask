@@ -73,7 +73,7 @@ APIs are covered in order to be as simple as possible.
 Just `chmod 755` the program and copy it to your
 `$HOME/.local/bin` or where ever you keep your personal
 binaries. You'll also need [Node.js](https://nodejs.org) for
-your platform.
+your platform. Tested on Arch Linux and Android/Termux.
 
 `License: MIT`
 
