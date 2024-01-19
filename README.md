@@ -20,7 +20,7 @@ $ mkdir -p $HOME/.config/fastmask
 $ chmod 700 $HOME/.config/fastmask
 $ cat << EOF > $HOME/.config/fastmask/config.json
 {
-  "token": "<your fastmail API token>",
+  "token": "<your fastmail API token>"
 }
 EOF
 $ chmod 600 $HOME/.config/fastmask/config.json
