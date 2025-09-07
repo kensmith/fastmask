@@ -1,7 +1,19 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/adrg/xdg"
+)
+
+func loadConfig() {
+	fastmaskConfigDir := xdg.ConfigHome + "/fastmask"
+	fmt.Println("config dirs: ", fastmaskConfigDir)
+
+	tokenFile := fastmaskConfigDir + "/config.json"
+	fmt.Println("tokenFile: ", tokenFile)
+}
 
 func main() {
-	fmt.Println("vim-go")
+	loadConfig()
 }

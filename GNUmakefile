@@ -8,7 +8,8 @@ GOPATH ?= $(HOME)/go
 GOBIN ?= $(GOPATH)/bin
 
 MAKEFLAGS += -j
-go := go
+goenv := GOEXPERIMENT=greenteagc GOEXPERIMENT=jsonv2
+go := $(goenv) go
 build-dir := $(CURDIR)/build
 local-clean :=
 
