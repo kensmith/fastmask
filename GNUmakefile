@@ -143,7 +143,7 @@ $(foreach .qc,$(quality-checkers), \
     : $(.qc-bin) $(sources) $(MAKEFILE_LIST) \
     | $(build-dir) \
     ; @echo RUNNING $(.qc) \
-    ; $(.qc-bin) \
+    ; $(goenv) $(.qc-bin) \
       $(.qc-flags) \
       > $(.artifact) \
       2>&1 \
