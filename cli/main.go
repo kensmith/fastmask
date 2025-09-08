@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"log"
@@ -292,7 +292,7 @@ Make sure to chmod 700 the directory and 600 the config file to protect your tok
 	if err != nil {
 		log.Fatalf("masked email: %v", err)
 	}
-	fastmaskResponseJSON, err := json.MarshalIndent(fastmaskResponse, "", "  ")
+	fastmaskResponseJSON, err := json.Marshal(fastmaskResponse)
 	if err != nil {
 		log.Fatalf("response marshal: %v", err)
 	}
