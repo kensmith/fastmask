@@ -159,7 +159,7 @@ $(foreach .qc,$(quality-checkers), \
       > $(.artifact) \
       2>&1 \
     ; exit_code=$$$$? \
-    ; test $$$$? -ne 0 && cat $(.artifact) \
+    ; test $$$$exit_code -ne 0 && cat $(.artifact) \
     ; exit $$$$exit_code \
    ) \
   $(eval all: $(.artifact)) \
