@@ -16,10 +16,38 @@ import (
 )
 
 const (
-	_authUrl           = "https://api.fastmail.com/.well-known/jmap"
-	_maskedEmailUrl    = "https://www.fastmail.com/dev/maskedemail"
-	_primaryAccountKey = "urn:ietf:params:jmap:core"
-	_httpTimeout       = 5 * time.Second
+	// API endpoints
+	_authUrl = "https://api.fastmail.com/.well-known/jmap"
+
+	// JMAP capabilities
+	_maskedEmailCapability = "https://www.fastmail.com/dev/maskedemail"
+	_primaryAccountKey     = "urn:ietf:params:jmap:core"
+
+	// HTTP configuration
+	_httpTimeout = 5 * time.Second
+
+	// File permissions
+	_configDirPerm          = 0o700
+	_configFilePerm         = 0o600
+	_configFilePermReadOnly = 0o400
+
+	// JMAP method names
+	_maskedEmailSetMethod = "MaskedEmail/set"
+
+	// JMAP response keys
+	_jmapCreatedKey   = "created"
+	_jmapEmailKey     = "email"
+	_jmapStateKey     = "state"
+	_jmapStateEnabled = "enabled"
+
+	// Request identifiers
+	_fastmaskRequestId = "fastmask"
+	_jmapCallId        = "0"
+
+	// Headers
+	_contentTypeHeader = "Content-Type"
+	_authHeader        = "Authorization"
+	_jsonContentType   = "application/json"
 )
 
 var defaultClient = &http.Client{
@@ -90,8 +118,8 @@ func loadToken() (string, error) {
 		return "", fmt.Errorf("cannot access config directory: %w", err)
 	}
 	dirMode := dirInfo.Mode().Perm()
-	if dirMode != 0o700 {
-		return "", fmt.Errorf("insecure config directory permissions %04o (should be 0700): %s", dirMode, fastmaskConfigDir)
+	if dirMode != _configDirPerm {
+		return "", fmt.Errorf("insecure config directory permissions %04o (should be %04o): %s", dirMode, _configDirPerm, fastmaskConfigDir)
 	}
 
 	// Check file permissions
@@ -100,8 +128,8 @@ func loadToken() (string, error) {
 		return "", fmt.Errorf("cannot access config file: %w", err)
 	}
 	fileMode := fileInfo.Mode().Perm()
-	if fileMode != 0o600 && fileMode != 0o400 {
-		return "", fmt.Errorf("insecure config file permissions %04o (should be 0600 or 0400): %s", fileMode, tokenFile)
+	if fileMode != _configFilePerm && fileMode != _configFilePermReadOnly {
+		return "", fmt.Errorf("insecure config file permissions %04o (should be %04o or %04o): %s", fileMode, _configFilePerm, _configFilePermReadOnly, tokenFile)
 	}
 
 	tokenData, err := os.ReadFile(tokenFile)
@@ -124,8 +152,8 @@ func auth(token string) (*FastmailIdentity, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set(_contentTypeHeader, _jsonContentType)
+	req.Header.Set(_authHeader, "Bearer "+token)
 
 	resp, err := defaultClient.Do(req)
 	if err != nil || resp == nil {
@@ -153,7 +181,7 @@ func auth(token string) (*FastmailIdentity, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, ok := fastmailAuthResponse.Capabilities[_maskedEmailUrl]
+	_, ok := fastmailAuthResponse.Capabilities[_maskedEmailCapability]
 	if !ok {
 		return nil, fmt.Errorf("fastmail token does not have masked email capability")
 	}
@@ -174,21 +202,21 @@ func auth(token string) (*FastmailIdentity, error) {
 func createMaskedEmail(fastmailId *FastmailIdentity, domain, token string) (*FastmaskResponse, error) {
 	prefix := GenPrefix()
 	var request FastmailMaskedEmailRequest
-	request.Using = []string{_primaryAccountKey, _maskedEmailUrl}
+	request.Using = []string{_primaryAccountKey, _maskedEmailCapability}
 	request.MethodCalls = [][]any{
 		{
-			"MaskedEmail/set",
+			_maskedEmailSetMethod,
 			FastmailMaskedEmailCreateMethod{
 				AccountId: fastmailId.AccountID,
 				Create: map[string]FastmailMaskedEmailCreateMethodParameters{
-					"fastmask": {
+					_fastmaskRequestId: {
 						ForDomain:   domain,
-						State:       "enabled",
+						State:       _jmapStateEnabled,
 						EmailPrefix: prefix,
 					},
 				},
 			},
-			"0",
+			_jmapCallId,
 		},
 	}
 	jsonRequest, err := json.Marshal(request)
@@ -200,8 +228,8 @@ func createMaskedEmail(fastmailId *FastmailIdentity, domain, token string) (*Fas
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set(_contentTypeHeader, _jsonContentType)
+	req.Header.Set(_authHeader, "Bearer "+token)
 	resp, err := defaultClient.Do(req)
 	if err != nil || resp == nil {
 		return nil, err
@@ -247,34 +275,34 @@ func createMaskedEmail(fastmailId *FastmailIdentity, domain, token string) (*Fas
 		return nil, fmt.Errorf("response was not a map: %v", response[1])
 	}
 
-	createdAny, ok := responseMap["created"]
+	createdAny, ok := responseMap[_jmapCreatedKey]
 	if !ok {
-		return nil, fmt.Errorf("created key not found in response map: %v", responseMap)
+		return nil, fmt.Errorf("%s key not found in response map: %v", _jmapCreatedKey, responseMap)
 	}
 
 	created, ok := createdAny.(map[string]any)
 	if !ok {
-		return nil, fmt.Errorf("value for created was not a map: %v", createdAny)
+		return nil, fmt.Errorf("value for %s was not a map: %v", _jmapCreatedKey, createdAny)
 	}
 
-	fastmaskAny, ok := created["fastmask"]
+	fastmaskAny, ok := created[_fastmaskRequestId]
 	if !ok {
-		return nil, fmt.Errorf("no fastmask response in payload: %v", created)
+		return nil, fmt.Errorf("no %s response in payload: %v", _fastmaskRequestId, created)
 	}
 
 	fastmaskMap, ok := fastmaskAny.(map[string]any)
 	if !ok {
-		return nil, fmt.Errorf("fastmask response was not a map: %v", fastmaskAny)
+		return nil, fmt.Errorf("%s response was not a map: %v", _fastmaskRequestId, fastmaskAny)
 	}
 
-	emailAny, ok := fastmaskMap["email"]
+	emailAny, ok := fastmaskMap[_jmapEmailKey]
 	if !ok {
-		return nil, fmt.Errorf("no email in payload: %v", fastmaskMap)
+		return nil, fmt.Errorf("no %s in payload: %v", _jmapEmailKey, fastmaskMap)
 	}
 
 	email, ok := emailAny.(string)
 	if !ok {
-		return nil, fmt.Errorf("email was not a string: %v", emailAny)
+		return nil, fmt.Errorf("%s was not a string: %v", _jmapEmailKey, emailAny)
 	}
 
 	return &FastmaskResponse{
