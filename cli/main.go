@@ -5,6 +5,7 @@ import (
 	"encoding/json/v2"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -46,6 +47,7 @@ func auth(token string) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -58,12 +60,17 @@ func auth(token string) error {
 		}
 	}()
 
-	body, err := io.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Body: ", string(body[:]))
-	fmt.Println("Status code: ", resp.StatusCode)
+	body := string(bodyBytes[:])
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("%s", body)
+	}
+
+	fmt.Println(body)
 
 	return nil
 }
@@ -71,10 +78,19 @@ func auth(token string) error {
 func main() {
 	token, err := loadToken()
 	if err != nil {
-		panic(err)
+		log.Fatalf(`
+Failed to load token file: %v
+Generate your token at: https://app.fastmail.com/settings/security/tokens
+Then create the config file with:
+{
+  "token": "<your fastmail API token>"
+}
+Make sure to chmod 700 the directory and 600 the config file to protect your token
+`, err)
+		os.Exit(1)
 	}
 	err = auth(token)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to authenticate: %v", err)
 	}
 }
