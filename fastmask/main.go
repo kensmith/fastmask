@@ -104,7 +104,7 @@ func auth(token string) (*FastmailIdentity, error) {
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if err != nil {
+	if err != nil || resp == nil {
 		return nil, err
 	}
 	defer func() {
@@ -182,7 +182,7 @@ func createMaskedEmail(fastmailId *FastmailIdentity, domain, token string) (*Fas
 	req.Header.Set("Authorization", "Bearer "+token)
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if err != nil {
+	if err != nil || resp == nil {
 		return nil, err
 	}
 	defer func() {
@@ -263,13 +263,17 @@ func createMaskedEmail(fastmailId *FastmailIdentity, domain, token string) (*Fas
 	}, nil
 }
 
-func usage() {
-	fmt.Printf("%s <domain>\n", os.Args[0])
+func usage(programName string) {
+	fmt.Printf("%s <domain>\n", programName)
 }
 
 func main() {
 	if len(os.Args) != 2 {
-		usage()
+		programName := "fastmask"
+		if len(os.Args) > 0 {
+			programName = os.Args[0]
+		}
+		usage(programName)
 		os.Exit(1)
 	}
 	domain := os.Args[1]
