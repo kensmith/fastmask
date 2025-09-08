@@ -13,11 +13,11 @@ go := $(goenv) go
 build-dir := $(CURDIR)/build
 local-clean :=
 
-cli-dir := cli
-cli-bin := fastmask
+fastmask-dir := fastmask
+fastmask-bin := fastmask
 watch-fastmask-args := example.com
 
-binary-tags := cli
+binary-tags := fastmask
 phony-targets := clean all
 
 tool-types := go

@@ -208,6 +208,9 @@ func createMaskedEmail(fastmailId *FastmailIdentity, domain, token string) (*Fas
 		return nil, err
 	}
 
+	// the following manual unmarshaling code is due to the jmap response array
+	// containing both strings and maps which does not elegantly map to nested
+	// Go structs
 	responsesLength := len(fastmailResponse.MethodResponses)
 	if responsesLength < 1 {
 		return nil, fmt.Errorf("invalid responses length: %v", responsesLength)
