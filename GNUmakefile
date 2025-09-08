@@ -15,7 +15,7 @@ local-clean :=
 
 cli-dir := cli
 cli-bin := fastmask
-watch-fastmask-args := smith.us.kg
+watch-fastmask-args := example.com
 
 binary-tags := cli
 phony-targets := clean all
