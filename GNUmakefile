@@ -15,6 +15,7 @@ local-clean :=
 
 cli-dir := cli
 cli-bin := fastmask
+watch-fastmask-args := smith.us.kg
 
 binary-tags := cli
 phony-targets := clean all
@@ -106,11 +107,12 @@ $(foreach tag,$(binary-tags), \
    ) \
   $(eval all: $(.target)) \
   $(eval .watch-target := watch-$(.binary-name)) \
+  $(eval .watch-args := $($(.watch-target)-args)) \
   $(eval .PHONY: $(.watch-target)) \
   $(eval \
     $(.watch-target) \
     : \
-    ; echo $(.target) | entr -s '$(.target) | $(CURDIR)/bin/pretty-json' \
+    ; echo $(.target) | entr -s '$(.target) $(.watch-args) | $(CURDIR)/bin/pretty-json' \
    ) \
  )
 
