@@ -1,0 +1,17 @@
+#!/bin/bash
+
+jq -R -r '
+. as $line
+| if test("\\{") then (
+		$line
+		| sub("^[^{]*"; "")
+		|
+			try
+				(fromjson)
+			catch
+				$line
+	)
+	else
+		$line
+end
+'

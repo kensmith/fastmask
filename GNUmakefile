@@ -90,7 +90,8 @@ all \
 ; @cat $(scc-artifact)
 
 $(foreach tag,$(binary-tags), \
-  $(eval .target := $(build-dir)/$($(tag)-bin)) \
+  $(eval .binary-name := $($(tag)-bin)) \
+  $(eval .target := $(build-dir)/$(.binary-name)) \
   $(eval .source-dir := $(CURDIR)/$($(tag)-dir)) \
   $(eval .sources := $(shell find $(.source-dir) -type f -name "*.go")) \
   $(eval sources += $(.sources)) \
@@ -104,6 +105,13 @@ $(foreach tag,$(binary-tags), \
     ; $(go) build -o $(.target) $(.sources) \
    ) \
   $(eval all: $(.target)) \
+  $(eval .watch-target := watch-$(.binary-name)) \
+  $(eval .PHONY: $(.watch-target)) \
+  $(eval \
+    $(.watch-target) \
+    : \
+    ; echo $(.target) | entr -s '$(.target) | $(CURDIR)/bin/pretty-json' \
+   ) \
  )
 
 $(go-mod-tidy-artifact) \
@@ -163,3 +171,7 @@ $(if $(strip $(build-dir)), \
  )
 
 $(build-dir):; mkdir -p $@
+
+watch-build \
+: $(sources) $(MAKEFILE_LIST) \
+; echo $< | entr $(MAKE)
