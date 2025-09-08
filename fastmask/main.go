@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json/jsontext"
 	"encoding/json/v2"
 	"fmt"
@@ -20,7 +19,12 @@ const (
 	_authUrl           = "https://api.fastmail.com/.well-known/jmap"
 	_maskedEmailUrl    = "https://www.fastmail.com/dev/maskedemail"
 	_primaryAccountKey = "urn:ietf:params:jmap:core"
+	_httpTimeout       = 5 * time.Second
 )
+
+var defaultClient = &http.Client{
+	Timeout: _httpTimeout,
+}
 
 type Config struct {
 	Token string `json:"token"`
@@ -79,6 +83,27 @@ type FastmaskResponse struct {
 func loadToken() (string, error) {
 	fastmaskConfigDir := xdg.ConfigHome + "/fastmask"
 	tokenFile := fastmaskConfigDir + "/config.json"
+
+	// Check directory permissions
+	dirInfo, err := os.Stat(fastmaskConfigDir)
+	if err != nil {
+		return "", fmt.Errorf("cannot access config directory: %w", err)
+	}
+	dirMode := dirInfo.Mode().Perm()
+	if dirMode != 0o700 {
+		return "", fmt.Errorf("insecure config directory permissions %04o (should be 0700): %s", dirMode, fastmaskConfigDir)
+	}
+
+	// Check file permissions
+	fileInfo, err := os.Stat(tokenFile)
+	if err != nil {
+		return "", fmt.Errorf("cannot access config file: %w", err)
+	}
+	fileMode := fileInfo.Mode().Perm()
+	if fileMode != 0o600 && fileMode != 0o400 {
+		return "", fmt.Errorf("insecure config file permissions %04o (should be 0600 or 0400): %s", fileMode, tokenFile)
+	}
+
 	tokenData, err := os.ReadFile(tokenFile)
 	if err != nil {
 		return "", err
@@ -88,22 +113,21 @@ func loadToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if config.Token == "" {
+		return "", fmt.Errorf("token is empty in config file")
+	}
 	return config.Token, nil
 }
 
 func auth(token string) (*FastmailIdentity, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", _authUrl, nil)
+	req, err := http.NewRequest("GET", _authUrl, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := defaultClient.Do(req)
 	if err != nil || resp == nil {
 		return nil, err
 	}
@@ -171,17 +195,14 @@ func createMaskedEmail(fastmailId *FastmailIdentity, domain, token string) (*Fas
 	if err != nil {
 		return nil, fmt.Errorf("json marshal: %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "POST", fastmailId.APIURL, bytes.NewReader(jsonRequest))
+	req, err := http.NewRequest("POST", fastmailId.APIURL, bytes.NewReader(jsonRequest))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := defaultClient.Do(req)
 	if err != nil || resp == nil {
 		return nil, err
 	}
