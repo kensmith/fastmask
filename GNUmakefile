@@ -25,8 +25,9 @@ tool-types := go
 quality-checkers := govulncheck scc staticcheck errcheck
 
 # `make deepcheck=t` to run expensive static analysis tools durin CI
+# Note: deadcode is incompatible with GOEXPERIMENT=jsonv2, so it's disabled
 $(if $(strip $(deepcheck)), \
-  $(eval quality-checkers += deadcode nilaway) \
+  $(eval quality-checkers += nilaway) \
  )
 
 go-tools := $(quality-checkers) gofumpt wgo
@@ -40,7 +41,7 @@ staticcheck-url := honnef.co/go/tools/cmd/staticcheck@latest
 errcheck-url := github.com/kisielk/errcheck@latest
 
 nilaway-artifact := $(build-dir)/nilaway.out
-nilaway-flags := ./...
+nilaway-flags := -include-pkgs=github.com/kensmith/fastmask ./...
 
 govulncheck-artifact := $(build-dir)/govulncheck.out
 govulncheck-flags :=
