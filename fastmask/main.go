@@ -110,7 +110,7 @@ func auth(token string) (*FastmailIdentity, error) {
 	defer func() {
 		err := resp.Body.Close()
 		if err != nil {
-			panic(err)
+			log.Fatalf("failed to close response body: %v", err)
 		}
 	}()
 
@@ -188,7 +188,7 @@ func createMaskedEmail(fastmailId *FastmailIdentity, domain, token string) (*Fas
 	defer func() {
 		err := resp.Body.Close()
 		if err != nil {
-			panic(err)
+			log.Fatalf("failed to close response body: %v", err)
 		}
 	}()
 
