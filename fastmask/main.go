@@ -220,7 +220,7 @@ func createMaskedEmail(fastmailId *FastmailIdentity, domain string, token Secure
 	}
 	jsonRequest, err := json.Marshal(request)
 	if err != nil {
-		return nil, fmt.Errorf("json marshal: %v", err)
+		return nil, fmt.Errorf("json marshal: %w", err)
 	}
 
 	req, err := http.NewRequest("POST", fastmailId.APIURL, bytes.NewReader(jsonRequest))
