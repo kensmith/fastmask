@@ -2,10 +2,6 @@ package main
 
 import "crypto/rand"
 
-const (
-	_prefixLen = 5
-)
-
 var (
 	_lexicon    = []byte("bcdfghjkmnpqrstvwxyz")
 	_numLexemes = len(_lexicon)

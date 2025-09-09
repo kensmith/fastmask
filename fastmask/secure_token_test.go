@@ -15,23 +15,23 @@ func TestSecureTokenStringer(t *testing.T) {
 	}{
 		{
 			name:     "empty token",
-			token:    SecureToken(""),
+			token:    SecureToken{},
 			expected: "<empty>",
 		},
 		{
 			name:     "short token",
-			token:    SecureToken("abc"),
+			token:    NewSecureToken("abc"),
 			expected: "<redacted>",
 		},
 		{
 			name:             "normal token",
-			token:            SecureToken("supersecrettoken123"),
+			token:            NewSecureToken("supersecrettoken123"),
 			expected:         "supe...<redacted>",
 			shouldNotContain: "secrettoken",
 		},
 		{
 			name:             "API token example",
-			token:            SecureToken("fmu1-abcd1234efgh5678ijkl9012mnop"),
+			token:            NewSecureToken("fmu1-abcd1234efgh5678ijkl9012mnop"),
 			expected:         "fmu1...<redacted>",
 			shouldNotContain: "abcd1234efgh",
 		},
@@ -58,7 +58,7 @@ func TestSecureTokenStringer(t *testing.T) {
 
 func TestSecureTokenExplicitConversion(t *testing.T) {
 	originalToken := "fmu1-supersecretapitoken123456789"
-	secureToken := SecureToken(originalToken)
+	secureToken := NewSecureToken(originalToken)
 
 	redacted := secureToken.String()
 	if strings.Contains(redacted, "supersecret") {
@@ -73,12 +73,12 @@ func TestSecureTokenExplicitConversion(t *testing.T) {
 		t.Errorf("fmt.Sprintf exposed sensitive data: %v", formatted)
 	}
 
-	fullToken := string(secureToken)
+	fullToken := secureToken.FullToken()
 	if fullToken != originalToken {
 		t.Errorf("string() conversion failed to return full token\ngot:  %v\nwant: %v", fullToken, originalToken)
 	}
 
-	headerValue := "Bearer " + string(secureToken)
+	headerValue := "Bearer " + secureToken.FullToken()
 	expectedHeader := "Bearer " + originalToken
 	if headerValue != expectedHeader {
 		t.Errorf("Header value would be incorrect\ngot:  %v\nwant: %v", headerValue, expectedHeader)

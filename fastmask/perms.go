@@ -5,12 +5,6 @@ import (
 	"os"
 )
 
-const (
-	_configDirPerm          = 0o700
-	_configFilePerm         = 0o600
-	_configFilePermReadOnly = 0o400
-)
-
 func checkDirectoryPermissions(dirname string) error {
 	dirInfo, err := os.Stat(dirname)
 	if err != nil {
