@@ -38,13 +38,13 @@ func (st SecureToken) Equals(s string) bool {
 
 func LoadToken() (SecureToken, error) {
 	fastmaskConfigDir := xdg.ConfigHome + "/fastmask"
-	err := checkDirectoryPermissions(fastmaskConfigDir)
+	err := CheckDirectoryPermissions(fastmaskConfigDir)
 	if err != nil {
 		return SecureToken{}, fmt.Errorf("directory permissions: %w", err)
 	}
 
 	tokenFile := fastmaskConfigDir + "/config.json"
-	err = checkFilePermissions(tokenFile)
+	err = CheckFilePermissions(tokenFile)
 	if err != nil {
 		return SecureToken{}, fmt.Errorf("file permissions: %w", err)
 	}
