@@ -18,4 +18,5 @@ const (
 	_maskedEmailSetMethod   = "MaskedEmail/set"
 	_prefixLen              = 5
 	_primaryAccountKey      = "urn:ietf:params:jmap:core"
+	_programName            = "fastmask"
 )

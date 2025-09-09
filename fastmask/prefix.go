@@ -8,7 +8,8 @@ var (
 )
 
 func GenPrefix() string {
-	randomBytes := make([]byte, _prefixLen)
+	prefixLen := max(1, _prefixLen)
+	randomBytes := make([]byte, prefixLen)
 	_, err := rand.Read(randomBytes)
 	if err != nil {
 		// the docs say this should never happen so it's acceptable to panic in
@@ -16,7 +17,7 @@ func GenPrefix() string {
 		// https://pkg.go.dev/crypto/rand#Read
 		panic("failed to generate prefix")
 	}
-	for i := range _prefixLen {
+	for i := range prefixLen {
 		randByte := randomBytes[i]
 		lexeme := _lexicon[int(randByte)%_numLexemes]
 		randomBytes[i] = lexeme

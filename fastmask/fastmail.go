@@ -47,7 +47,11 @@ func CreateMaskedEmail(httpClient *http.Client, fastmailId *FastmailIdentity, do
 	req.Header.Set(_contentTypeHeader, _jsonContentType)
 	req.Header.Set(_authHeader, "Bearer "+token.FullToken())
 	resp, err := httpClient.Do(req)
-	if err != nil || resp == nil {
+	if err != nil {
+		return
+	}
+	if resp == nil {
+		err = fmt.Errorf("strangely nil resp despite err being nil")
 		return
 	}
 	defer func() {
@@ -59,8 +63,10 @@ func CreateMaskedEmail(httpClient *http.Client, fastmailId *FastmailIdentity, do
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
+		err = fmt.Errorf("failed to read response body %d: %w", resp.StatusCode, err)
 		return
 	}
+
 	if resp.StatusCode != 200 {
 		body := string(bodyBytes)
 		err = fmt.Errorf("server returned status code %d: %s", resp.StatusCode, body)

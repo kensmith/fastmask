@@ -16,7 +16,7 @@ func usage(programName string) {
 
 func main() {
 	if len(os.Args) != 2 {
-		programName := "fastmask"
+		programName := _programName
 		if len(os.Args) > 0 {
 			programName = os.Args[0]
 		}

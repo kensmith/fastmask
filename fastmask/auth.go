@@ -16,7 +16,11 @@ func Authenticate(httpClient *http.Client, token SecureToken) (fastmailIdentity 
 	req.Header.Set(_authHeader, "Bearer "+token.FullToken())
 
 	resp, err := httpClient.Do(req)
-	if err != nil || resp == nil {
+	if err != nil {
+		return
+	}
+	if resp == nil {
+		err = fmt.Errorf("strangely nil resp despite err being nil")
 		return
 	}
 	defer func() {
