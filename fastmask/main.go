@@ -35,8 +35,6 @@ const (
 	_maskedEmailSetMethod = "MaskedEmail/set"
 
 	// JMAP response keys
-	_jmapCreatedKey   = "created"
-	_jmapEmailKey     = "email"
 	_jmapStateEnabled = "enabled"
 
 	// Request identifiers
@@ -98,7 +96,15 @@ type FastmailMaskedEmailRequest struct {
 }
 
 type FastmailMaskedEmailResponse struct {
-	MethodResponses [][]any `json:"methodResponses"`
+	MethodResponses []jsontext.Value `json:"methodResponses"`
+}
+
+type MaskedEmailSetResponseDetail struct {
+	Email string `json:"email"`
+}
+
+type MaskedEmailSetResponse struct {
+	Created map[string]MaskedEmailSetResponseDetail `json:"created"`
 }
 
 type FastmaskResponse struct {
@@ -244,70 +250,52 @@ func createMaskedEmail(fastmailId *FastmailIdentity, domain string, token Secure
 	if err != nil {
 		return nil, err
 	}
-	body := string(bodyBytes)
-
 	if resp.StatusCode != 200 {
+		body := string(bodyBytes)
 		return nil, fmt.Errorf("server returned status code %d: %s", resp.StatusCode, body)
 	}
 
 	var fastmailResponse FastmailMaskedEmailResponse
 	err = json.Unmarshal(bodyBytes, &fastmailResponse)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	// the following manual unmarshaling code is due to the jmap response array
-	// containing both strings and maps which does not elegantly map to nested
-	// Go structs
-	responsesLength := len(fastmailResponse.MethodResponses)
-	if responsesLength < 1 {
-		return nil, fmt.Errorf("invalid responses length: %v", responsesLength)
-	}
-	response := fastmailResponse.MethodResponses[0]
-	responseLength := len(response)
-	if responseLength < 2 {
-		return nil, fmt.Errorf("invalid response length: %v", responseLength)
+	if len(fastmailResponse.MethodResponses) < 1 {
+		return nil, fmt.Errorf("empty method responses")
 	}
 
-	responseMap, ok := response[1].(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("response was not a map: %v", response[1])
+	// Parse the heterogeneous array [method_name, response_object, call_id]
+	var methodResponse []jsontext.Value
+	err = json.Unmarshal(fastmailResponse.MethodResponses[0], &methodResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse method response array: %w", err)
 	}
 
-	createdAny, ok := responseMap[_jmapCreatedKey]
-	if !ok {
-		return nil, fmt.Errorf("%s key not found in response map: %v", _jmapCreatedKey, responseMap)
+	if len(methodResponse) < 2 {
+		return nil, fmt.Errorf("invalid method response length: %d", len(methodResponse))
 	}
 
-	created, ok := createdAny.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("value for %s was not a map: %v", _jmapCreatedKey, createdAny)
+	// Now unmarshal just the response object (index 1)
+	var setResponse MaskedEmailSetResponse
+	err = json.Unmarshal(methodResponse[1], &setResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse set response: %w", err)
 	}
 
-	fastmaskAny, ok := created[_fastmaskRequestId]
-	if !ok {
-		return nil, fmt.Errorf("no %s response in payload: %v", _fastmaskRequestId, created)
+	maskedEmail, exists := setResponse.Created[_fastmaskRequestId]
+	if !exists {
+		return nil, fmt.Errorf("no fastmask response in created map")
 	}
 
-	fastmaskMap, ok := fastmaskAny.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("%s response was not a map: %v", _fastmaskRequestId, fastmaskAny)
-	}
-
-	emailAny, ok := fastmaskMap[_jmapEmailKey]
-	if !ok {
-		return nil, fmt.Errorf("no %s in payload: %v", _jmapEmailKey, fastmaskMap)
-	}
-
-	email, ok := emailAny.(string)
-	if !ok {
-		return nil, fmt.Errorf("%s was not a string: %v", _jmapEmailKey, emailAny)
+	if maskedEmail.Email == "" {
+		return nil, fmt.Errorf("email was empty in response")
 	}
 
 	return &FastmaskResponse{
 		Prefix: prefix,
 		Domain: domain,
-		Email:  email,
+		Email:  maskedEmail.Email,
 	}, nil
 }
 
