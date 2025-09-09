@@ -54,8 +54,21 @@ var defaultClient = &http.Client{
 	Timeout: _httpTimeout,
 }
 
+type SecureToken string
+
+func (t SecureToken) String() string {
+	if len(t) == 0 {
+		return "<empty>"
+	}
+	if len(t) <= 8 {
+		return "<redacted>"
+	}
+	// Show only first 4 chars for debugging, rest is masked
+	return string(t[:4]) + "..." + "<redacted>"
+}
+
 type Config struct {
-	Token string `json:"token"`
+	Token SecureToken `json:"token"`
 }
 
 type FastmailIdentity struct {
@@ -85,19 +98,6 @@ type FastmailMaskedEmailRequest struct {
 	MethodCalls [][]any  `json:"methodCalls"`
 }
 
-type FastmailMaskedEmail struct {
-	Email string `json:"email"`
-}
-
-type FastmailFastmaskCreated struct {
-	Fastmask FastmailMaskedEmail `json:"fastmask"`
-}
-
-type FastmailMethodResponse struct {
-	// Created map[string]FastmailFastmaskCreated `json:"created"`
-	Created map[string]any `json:"created"`
-}
-
 type FastmailMaskedEmailResponse struct {
 	MethodResponses [][]any `json:"methodResponses"`
 }
@@ -108,7 +108,7 @@ type FastmaskResponse struct {
 	Email  string `json:"email"`
 }
 
-func loadToken() (string, error) {
+func loadToken() (SecureToken, error) {
 	fastmaskConfigDir := xdg.ConfigHome + "/fastmask"
 	tokenFile := fastmaskConfigDir + "/config.json"
 
@@ -147,13 +147,13 @@ func loadToken() (string, error) {
 	return config.Token, nil
 }
 
-func auth(token string) (*FastmailIdentity, error) {
+func auth(token SecureToken) (*FastmailIdentity, error) {
 	req, err := http.NewRequest("GET", _authUrl, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set(_contentTypeHeader, _jsonContentType)
-	req.Header.Set(_authHeader, "Bearer "+token)
+	req.Header.Set(_authHeader, "Bearer "+string(token))
 
 	resp, err := defaultClient.Do(req)
 	if err != nil || resp == nil {
@@ -170,7 +170,7 @@ func auth(token string) (*FastmailIdentity, error) {
 	if err != nil {
 		return nil, err
 	}
-	body := string(bodyBytes[:])
+	body := string(bodyBytes)
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("%s", body)
@@ -199,7 +199,7 @@ func auth(token string) (*FastmailIdentity, error) {
 	}, nil
 }
 
-func createMaskedEmail(fastmailId *FastmailIdentity, domain, token string) (*FastmaskResponse, error) {
+func createMaskedEmail(fastmailId *FastmailIdentity, domain string, token SecureToken) (*FastmaskResponse, error) {
 	prefix := GenPrefix()
 	var request FastmailMaskedEmailRequest
 	request.Using = []string{_primaryAccountKey, _maskedEmailCapability}
@@ -229,7 +229,7 @@ func createMaskedEmail(fastmailId *FastmailIdentity, domain, token string) (*Fas
 		return nil, err
 	}
 	req.Header.Set(_contentTypeHeader, _jsonContentType)
-	req.Header.Set(_authHeader, "Bearer "+token)
+	req.Header.Set(_authHeader, "Bearer "+string(token))
 	resp, err := defaultClient.Do(req)
 	if err != nil || resp == nil {
 		return nil, err
@@ -245,7 +245,7 @@ func createMaskedEmail(fastmailId *FastmailIdentity, domain, token string) (*Fas
 	if err != nil {
 		return nil, err
 	}
-	body := string(bodyBytes[:])
+	body := string(bodyBytes)
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("server returned status code %d: %s", resp.StatusCode, body)
@@ -348,11 +348,11 @@ Make sure to chmod 700 the directory and 600 the config file to protect your tok
 	if err != nil {
 		log.Fatalf("masked email: %v", err)
 	}
-	fastmaskResponseJSON, err := json.Marshal(fastmaskResponse)
+	fastmaskResponseJSON, err := json.Marshal(fastmaskResponse, jsontext.WithIndent("  "))
 	if err != nil {
 		log.Fatalf("response marshal: %v", err)
 	}
-	_ = (*jsontext.Value)(&fastmaskResponseJSON).Indent()
-	fastmaskResponseStr := string(fastmaskResponseJSON[:])
+
+	fastmaskResponseStr := string(fastmaskResponseJSON)
 	fmt.Println(fastmaskResponseStr)
 }
