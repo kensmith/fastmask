@@ -37,7 +37,6 @@ const (
 	// JMAP response keys
 	_jmapCreatedKey   = "created"
 	_jmapEmailKey     = "email"
-	_jmapStateKey     = "state"
 	_jmapStateEnabled = "enabled"
 
 	// Request identifiers
