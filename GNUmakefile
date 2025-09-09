@@ -113,7 +113,7 @@ $(foreach tag,$(binary-tags), \
   $(eval \
     $(.watch-target) \
     : \
-    ; echo $(.target) | entr -s '$(.target) $(.watch-args) | $(CURDIR)/bin/pretty-json' \
+    ; find $(.target) | entr -s '$(.target) $(.watch-args) | $(CURDIR)/bin/pretty-json' \
    ) \
  )
 
@@ -177,4 +177,4 @@ $(build-dir):; mkdir -p $@
 
 watch-build \
 : $(sources) $(MAKEFILE_LIST) \
-; echo $< | entr $(MAKE)
+; find $^ | entr -c $(MAKE)
