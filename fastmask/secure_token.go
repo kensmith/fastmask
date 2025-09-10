@@ -32,10 +32,6 @@ func (st SecureToken) FullToken() string {
 	return st.token
 }
 
-func (st SecureToken) Equals(s string) bool {
-	return st.token == s
-}
-
 func LoadToken() (SecureToken, error) {
 	fastmaskConfigDir := xdg.ConfigHome + "/fastmask"
 	err := CheckDirectoryPermissions(fastmaskConfigDir)
@@ -53,13 +49,16 @@ func LoadToken() (SecureToken, error) {
 	if err != nil {
 		return SecureToken{}, err
 	}
+
 	var config Config
 	err = json.Unmarshal(tokenData, &config)
 	if err != nil {
 		return SecureToken{}, err
 	}
+
 	if config.Token == "" {
 		return SecureToken{}, fmt.Errorf("token is empty in config file")
 	}
+
 	return NewSecureToken(config.Token), nil
 }

@@ -4,19 +4,30 @@ import (
 	"encoding/json/jsontext"
 	"encoding/json/v2"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	_ "time/tzdata"
 )
 
 func usage(programName string) {
-	fmt.Printf("%s <domain>\n", programName)
+	fmt.Printf(`
+usage:
+	%s <domain>
+
+Generate your token at: https://app.fastmail.com/settings/security/tokens
+Then create the config file with:
+{
+  "token": "<your fastmail API token>"
+}
+Make sure to chmod 700 the directory and 600 the config file to protect your token
+`, programName)
 }
 
 func main() {
+	ConfigureLogging()
+	programName := _programName
 	if len(os.Args) != 2 {
-		programName := _programName
 		if len(os.Args) > 0 {
 			programName = os.Args[0]
 		}
@@ -26,15 +37,8 @@ func main() {
 	domain := os.Args[1]
 	token, err := LoadToken()
 	if err != nil {
-		log.Fatalf(`
-Failed to load token file: %v
-Generate your token at: https://app.fastmail.com/settings/security/tokens
-Then create the config file with:
-{
-  "token": "<your fastmail API token>"
-}
-Make sure to chmod 700 the directory and 600 the config file to protect your token
-`, err)
+		slog.Error("token load", "err", err)
+		usage(programName)
 		os.Exit(1)
 	}
 
@@ -44,17 +48,20 @@ Make sure to chmod 700 the directory and 600 the config file to protect your tok
 
 	fastmailId, err := Authenticate(httpClient, token)
 	if err != nil {
-		log.Fatalf("auth: %v", err)
+		slog.Error("authentication", "err", err)
+		os.Exit(1)
 	}
 
 	fastmaskResponse, err := CreateMaskedEmail(httpClient, fastmailId, domain, token)
 	if err != nil {
-		log.Fatalf("masked email: %v", err)
+		slog.Error("masked email", "err", err)
+		os.Exit(1)
 	}
 
 	fastmaskResponseJSON, err := json.Marshal(fastmaskResponse, jsontext.WithIndent("  "))
 	if err != nil {
-		log.Fatalf("response marshal: %v", err)
+		slog.Error("response marshal", "err", err)
+		os.Exit(1)
 	}
 
 	fastmaskResponseStr := string(fastmaskResponseJSON)
