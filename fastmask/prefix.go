@@ -3,7 +3,7 @@ package main
 import "crypto/rand"
 
 var (
-	_lexicon    = []byte("bcdfghjkmnpqrstvwxyz")
+	_lexicon    = []byte("bcdfghkmnpqrstvwxz")
 	_numLexemes = len(_lexicon)
 )
 
